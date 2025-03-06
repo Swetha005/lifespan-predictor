@@ -5,8 +5,11 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes to handle cross-origin requests
 
 @app.route('/')
-def home():
-    return "Welcome to the Lifespan Prediction API!"
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 @app.route('/predict', methods=['POST'])
 def predict_lifespan():
