@@ -1,0 +1,1 @@
+web: gunicorn lifespan_app:app
