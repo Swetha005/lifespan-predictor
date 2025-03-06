@@ -1,15 +1,18 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes to handle cross-origin requests
 
 @app.route('/')
-def index():
+def home():
+    # Serve index.html when the user accesses the home route
     return render_template('index.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+def validate_data(data, required_fields):
+    """Check if all required fields are in the data"""
+    missing_fields = [field for field in required_fields if field not in data]
+    return missing_fields
 
 @app.route('/predict', methods=['POST'])
 def predict_lifespan():
@@ -17,16 +20,18 @@ def predict_lifespan():
         # Get JSON data from the POST request
         data = request.get_json()
 
-        # Check if all required fields are present
+        # Define the required fields
         required_fields = [
             'gender', 'age', 'occupation', 'sleep_duration', 
             'quality_of_sleep', 'physical_activity', 'stress_level', 
             'bmi_category', 'blood_pressure', 'heart_rate', 
             'daily_steps', 'sleep_disorder'
         ]
-        for field in required_fields:
-            if field not in data:
-                return jsonify({"error": f"Missing field: {field}"}), 400
+
+        # Check if all required fields are present
+        missing_fields = validate_data(data, required_fields)
+        if missing_fields:
+            return jsonify({"error": f"Missing fields: {', '.join(missing_fields)}"}), 400
 
         # Extract data for prediction
         age = int(data['age'])
@@ -43,55 +48,35 @@ def predict_lifespan():
         predicted_lifespan = 80  # Default lifespan (for an average person)
 
         # Weighting factors for each feature
-        gender_factor = {'Male': -2, 'Female': 2}  # Females tend to live longer
-        age_factor = 0.1  # Decrease lifespan by 0.1 per year of age over 50
-        sleep_factor = 0.5  # Improve lifespan by 0.5 for each hour of sleep
-        sleep_quality_factor = {'Good': 2, 'Average': 0, 'Poor': -2}  # Quality of sleep effect
-        activity_factor = {'Regular': 3, 'None': -3}  # Regular activity vs no activity
-        stress_factor = {'Low': 2, 'Moderate': 0, 'High': -3}  # Stress levels
-        bmi_factor = {'Normal': 2, 'Overweight': -2, 'Obese': -5}  # BMI categories
-        blood_pressure_factor = {'Normal': 2, 'High': -3}  # Blood pressure levels
-        heart_rate_factor = -0.1  # Decrease lifespan by 0.1 for every bpm over 80
-        sleep_disorder_factor = {'Yes': -3, 'No': 0}  # Sleep disorder effect
+        gender_factor = {'Male': -2, 'Female': 2}
+        age_factor = 0.1
+        sleep_factor = 0.5
+        sleep_quality_factor = {'Good': 2, 'Average': 0, 'Poor': -2}
+        activity_factor = {'Regular': 3, 'None': -3}
+        stress_factor = {'Low': 2, 'Moderate': 0, 'High': -3}
+        bmi_factor = {'Normal': 2, 'Overweight': -2, 'Obese': -5}
+        blood_pressure_factor = {'Normal': 2, 'High': -3}
+        heart_rate_factor = -0.1
+        sleep_disorder_factor = {'Yes': -3, 'No': 0}
 
-        # Apply gender factor
+        # Apply the factors based on the data
         predicted_lifespan += gender_factor.get(data['gender'], 0)
-
-        # Apply age factor (every year above 50 reduces lifespan)
         predicted_lifespan -= (age - 50) * age_factor if age > 50 else 0
-
-        # Apply sleep duration (each hour of sleep adds lifespan)
         if sleep_duration < 6:
-            predicted_lifespan -= 2  # Less than 6 hours of sleep
+            predicted_lifespan -= 2
         elif sleep_duration > 9:
-            predicted_lifespan -= 1  # More than 9 hours of sleep
+            predicted_lifespan -= 1
         else:
-            predicted_lifespan += sleep_duration * sleep_factor  # Between 6-9 hours is ideal
-
-        # Apply sleep quality factor
+            predicted_lifespan += sleep_duration * sleep_factor
         predicted_lifespan += sleep_quality_factor.get(quality_of_sleep, 0)
-
-        # Apply physical activity factor
         predicted_lifespan += activity_factor.get(physical_activity, 0)
-
-        # Apply stress level factor
         predicted_lifespan += stress_factor.get(stress_level, 0)
-
-        # Apply BMI category factor
         predicted_lifespan += bmi_factor.get(bmi_category, 0)
-
-        # Apply blood pressure factor
         predicted_lifespan += blood_pressure_factor.get(data['blood_pressure'], 0)
-
-        # Apply heart rate factor
         if heart_rate > 80:
             predicted_lifespan -= (heart_rate - 80) * heart_rate_factor
-
-        # Apply sleep disorder factor
         predicted_lifespan += sleep_disorder_factor.get(sleep_disorder, 0)
-
-        # Apply daily steps as additional positive impact (every 1000 steps add lifespan)
-        predicted_lifespan += daily_steps // 1000  # For example, 8000 steps would add 8 years
+        predicted_lifespan += daily_steps // 1000  # Adding years for daily steps
 
         # Return the predicted lifespan with the received data
         return jsonify({
