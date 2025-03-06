@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lifespan Prediction</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #141e30, #243b55);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            width: 50%;
+            margin: auto;
+        }
+        label {
+            font-size: 18px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        button {
+            background-color: #ff9800;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .slider-container input {
+            width: 80%;
+        }
+        .slider-value {
+            font-size: 18px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🔮 Lifespan Prediction</h1>
+
+    <div class="container">
+        <form id="lifespan-form">
+            
+            <label>Gender:</label>
+            <select id="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+
+            <label>Age:</label>
+            <input type="number" id="age" min="10" max="100" value="25">
+
+            <label>Occupation:</label>
+            <input type="text" id="occupation" placeholder="Enter your occupation">
+
+            <label>Sleep Duration (hours):</label>
+            <div class="slider-container">
+                <input type="range" id="sleep_duration" min="1" max="12" step="0.5" value="7">
+                <span class="slider-value" id="sleep_duration_value">7</span>
+            </div>
+
+            <label>Quality of Sleep (1-10):</label>
+            <div class="slider-container">
+                <input type="range" id="quality_of_sleep" min="1" max="10" step="1" value="7">
+                <span class="slider-value" id="quality_of_sleep_value">7</span>
+            </div>
+
+            <label>Physical Activity Level (1-10):</label>
+            <div class="slider-container">
+                <input type="range" id="physical_activity" min="1" max="10" step="1" value="5">
+                <span class="slider-value" id="physical_activity_value">5</span>
+            </div>
+
+            <label>Stress Level (1-10):</label>
+            <div class="slider-container">
+                <input type="range" id="stress_level" min="1" max="10" step="1" value="5">
+                <span class="slider-value" id="stress_level_value">5</span>
+            </div>
+
+            <label>BMI Category:</label>
+            <select id="bmi_category">
+                <option value="Underweight">Underweight</option>
+                <option value="Normal">Normal</option>
+                <option value="Overweight">Overweight</option>
+                <option value="Obese">Obese</option>
+            </select>
+
+            <label>Blood Pressure:</label>
+            <select id="blood_pressure">
+                <option value="Low">Low</option>
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+            </select>
+
+            <label>Heart Rate (BPM):</label>
+            <input type="number" id="heart_rate" min="40" max="180" value="75">
+
+            <label>Daily Steps:</label>
+            <input type="number" id="daily_steps" min="0" max="30000" value="5000">
+
+            <label>Sleep Disorder:</label>
+            <select id="sleep_disorder">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+            </select>
+
+            <button type="button" onclick="predictLifespan()">🔮 Predict Lifespan</button>
+
+            <h2 id="result"></h2>
+
+        </form>
+    </div>
+
+    <script>
+        // Update slider values dynamically
+        $("input[type='range']").on("input", function() {
+            $("#" + this.id + "_value").text(this.value);
+        });
+
+        function predictLifespan() {
+            let userData = {
+                gender: $("#gender").val(),
+                age: parseInt($("#age").val()),
+                occupation: $("#occupation").val(),
+                sleep_duration: parseFloat($("#sleep_duration").val()),
+                quality_of_sleep: parseInt($("#quality_of_sleep").val()),
+                physical_activity: parseInt($("#physical_activity").val()),
+                stress_level: parseInt($("#stress_level").val()),
+                bmi_category: $("#bmi_category").val(),
+                blood_pressure: $("#blood_pressure").val(),
+                heart_rate: parseInt($("#heart_rate").val()),
+                daily_steps: parseInt($("#daily_steps").val()),
+                sleep_disorder: $("#sleep_disorder").val()
+            };
+
+            console.log("Sending Data:", userData); // Debugging
+
+            fetch('http://127.0.0.1:5000/predict', {  // Updated with full API URL
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    $("#result").html("⚠️ Error: " + data.error);
+                } else {
+                    $("#result").html("🧬 Predicted Lifespan: <strong>" + data["Predicted Lifespan"] + " years</strong>");
+                }
+            })
+            .catch(error => $("#result").html("❌ API Error: " + error));
+        }
+    </script>
+
+</body>
+</html>
