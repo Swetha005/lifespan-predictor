@@ -33,15 +33,19 @@ def predict_lifespan():
         if missing_fields:
             return jsonify({"error": f"Missing fields: {', '.join(missing_fields)}"}), 400
 
-        # Extract data for prediction
-        age = int(data['age'])
-        sleep_duration = int(data['sleep_duration'])
+        # Extract data for prediction and ensure it's in the correct format
+        try:
+            age = int(data['age'])
+            sleep_duration = int(data['sleep_duration'])
+            heart_rate = int(data['heart_rate'])
+            daily_steps = int(data['daily_steps'])
+        except ValueError:
+            return jsonify({"error": "Invalid data type for one or more fields. Please check your input."}), 400
+
         quality_of_sleep = data['quality_of_sleep']
         physical_activity = data['physical_activity']
         stress_level = data['stress_level']
         bmi_category = data['bmi_category']
-        heart_rate = int(data['heart_rate'])
-        daily_steps = int(data['daily_steps'])
         sleep_disorder = data['sleep_disorder']
 
         # Initialize lifespan prediction (base value)
